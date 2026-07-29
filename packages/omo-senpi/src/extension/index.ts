@@ -11,6 +11,7 @@ import { createStartWorkContinuationComponent } from "../components/start-work-c
 import { createUltraworkComponent } from "../components/ultrawork"
 import { createUlwLoopComponent } from "../components/ulw-loop"
 import { createFallbackArchitectComponent } from "../components/fallback-architect"
+import { createQwenThinkingGuardComponent } from "../components/qwen-thinking-guard"
 
 const components: OmoSenpiComponent[] = [
   createConfigStartupComponent(),
@@ -24,6 +25,7 @@ const components: OmoSenpiComponent[] = [
   createCodegraphComponent(),
   createTaskComponent(),
   createConfigWatchComponent(),
+  createQwenThinkingGuardComponent(),
 ]
 
 export default composeOmoSenpiExtension(components)
