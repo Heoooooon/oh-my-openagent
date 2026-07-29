@@ -124,11 +124,11 @@ A record of short name to catalog entry (`schema/model-catalog.ts`). Each entry 
 ```jsonc
 {
   "models": {
-    "opus": { "model": "anthropic/claude-opus-4-8", "variant": "max" },
+    "opus": { "model": "anthropic/claude-opus-5", "variant": "max" },
     "fast": { "model": "anthropic/claude-haiku-4-5" }
   },
   "categories": {
-    "deep": { "model": "opus" },              // resolves to anthropic/claude-opus-4-8 at variant max
+    "deep": { "model": "opus" },              // resolves to anthropic/claude-opus-5 at variant max
     "quick": { "model": "fast", "variant": "high" } // site tuning wins over the entry
   }
 }
@@ -340,7 +340,7 @@ For both categories and agents the resolved `variant` wins over `reasoningEffort
   },
   "categories": {
     "deep": {
-      "model": "anthropic/claude-opus-4-8",
+      "model": "anthropic/claude-opus-5",
       "reasoningEffort": "high",
       "fallback_models": ["anthropic/claude-sonnet-4-5"]
     }

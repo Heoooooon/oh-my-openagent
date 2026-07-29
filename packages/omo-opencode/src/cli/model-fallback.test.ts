@@ -101,7 +101,7 @@ describe("generateModelConfig", () => {
       expect(JSON.stringify(result)).not.toContain("zai-coding-plan/glm-4.7")
     })
 
-    test("uses Bailian Qwen for utility agents when only Bailian is available", () => {
+    test("uses current Bailian Qwen for utility agents when only Bailian is available", () => {
       // #given only Bailian Coding Plan is available
       const config = createConfig({ hasBailianCodingPlan: true })
 
@@ -109,8 +109,8 @@ describe("generateModelConfig", () => {
       const result = generateModelConfig(config)
 
       // #then Bailian is limited to compatible utility routes
-      expect(result.agents?.librarian?.model).toBe("bailian-coding-plan/qwen3.5-plus")
-      expect(result.agents?.explore?.model).toBe("bailian-coding-plan/qwen3.5-plus")
+      expect(result.agents?.librarian?.model).toBe("bailian-coding-plan/qwen3.7-plus")
+      expect(result.agents?.explore?.model).toBe("bailian-coding-plan/qwen3.7-plus")
       expect(result.agents?.hephaestus).toBeUndefined()
     })
   })
@@ -191,6 +191,17 @@ describe("generateModelConfig", () => {
 
       // #then explore should use gpt-5-mini (Copilot fallback)
       expect(result.agents?.explore?.model).toBe("github-copilot/gpt-5-mini")
+    })
+
+    test("explore uses current OpenCode Go Qwen fallback when only OpenCode Go is available", () => {
+      // #given only OpenCode Go is available
+      const config = createConfig({ hasOpencodeGo: true })
+
+      // #when generateModelConfig is called
+      const result = generateModelConfig(config)
+
+      // #then explore should use the current OpenCode Go Qwen fallback
+      expect(result.agents?.explore?.model).toBe("opencode-go/qwen3.7-plus")
     })
   })
 

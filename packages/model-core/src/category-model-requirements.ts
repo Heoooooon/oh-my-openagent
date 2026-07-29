@@ -155,7 +155,7 @@ export const CATEGORY_MODEL_REQUIREMENTS: Record<string, ModelRequirement> = {
       },
       {
         providers: ["google", "github-copilot", "opencode", "vercel"],
-        model: "gemini-3.1-pro",
+        model: "gemini-3.6-flash",
       },
     ],
   },

@@ -85,6 +85,7 @@ describe("createSisyphusJuniorAgentWithOverrides", () => {
       const result = createSisyphusJuniorAgentWithOverrides(override)
 
       // then
+      expect(SISYPHUS_JUNIOR_DEFAULTS.model).toBe("anthropic/claude-sonnet-5")
       expect(result.model).toBe(SISYPHUS_JUNIOR_DEFAULTS.model)
     })
 
@@ -220,7 +221,7 @@ describe("createSisyphusJuniorAgentWithOverrides", () => {
 
     test("#given Claude model #when agent is created #then injects thinking", () => {
       // given
-      const override = { model: "anthropic/claude-sonnet-4-6" }
+      const override = { model: "anthropic/claude-sonnet-5" }
 
       // when
       const result = createSisyphusJuniorAgentWithOverrides(override)
@@ -347,7 +348,7 @@ describe("createSisyphusJuniorAgentWithOverrides", () => {
   describe("useTaskSystem integration", () => {
     test("useTaskSystem=true produces Task_Discipline prompt for Claude", () => {
       //#given
-      const override = { model: "anthropic/claude-sonnet-4-6" }
+      const override = { model: "anthropic/claude-sonnet-5" }
 
       //#when
       const result = createSisyphusJuniorAgentWithOverrides(override, undefined, true)
@@ -385,7 +386,7 @@ describe("createSisyphusJuniorAgentWithOverrides", () => {
 
     test("useTaskSystem=true includes task_create/task_update in Claude prompt", () => {
       //#given
-      const override = { model: "anthropic/claude-sonnet-4-6" }
+      const override = { model: "anthropic/claude-sonnet-5" }
 
       //#when
       const result = createSisyphusJuniorAgentWithOverrides(override, undefined, true)
@@ -409,7 +410,7 @@ describe("createSisyphusJuniorAgentWithOverrides", () => {
 
     test("useTaskSystem=false uses todowrite instead of task_create", () => {
       //#given
-      const override = { model: "anthropic/claude-sonnet-4-6" }
+      const override = { model: "anthropic/claude-sonnet-5" }
 
       //#when
       const result = createSisyphusJuniorAgentWithOverrides(override, undefined, false)
@@ -435,7 +436,7 @@ describe("createSisyphusJuniorAgentWithOverrides", () => {
 
     test("Claude model uses default prompt with discipline section", () => {
       // given
-      const override = { model: "anthropic/claude-sonnet-4-6" }
+      const override = { model: "anthropic/claude-sonnet-5" }
 
       // when
       const result = createSisyphusJuniorAgentWithOverrides(override)
@@ -494,7 +495,7 @@ describe("createSisyphusJuniorAgentWithOverrides", () => {
       const gpt54Override = { model: "openai/gpt-5.4" }
       const gpt55Override = { model: "openai/gpt-5.5" }
       const gptGenericOverride = { model: "openai/gpt-4o" }
-      const claudeOverride = { model: "anthropic/claude-sonnet-4-6" }
+      const claudeOverride = { model: "anthropic/claude-sonnet-5" }
 
       // when
       const gpt54Result = createSisyphusJuniorAgentWithOverrides(gpt54Override)
@@ -517,8 +518,10 @@ describe("createSisyphusJuniorAgentWithOverrides", () => {
       const result = createSisyphusJuniorAgentWithOverrides(override)
 
       // then
-      const baseEndIndex = result.prompt!.indexOf("</Style>")
-      const appendIndex = result.prompt!.indexOf("CUSTOM_MARKER_FOR_TEST")
+      expect(result.prompt).toBeString()
+      const prompt = result.prompt
+      const baseEndIndex = prompt.indexOf("</Style>")
+      const appendIndex = prompt.indexOf("CUSTOM_MARKER_FOR_TEST")
       expect(baseEndIndex).not.toBe(-1)
       expect(appendIndex).toBeGreaterThan(baseEndIndex)
     })
@@ -682,7 +685,7 @@ describe("getSisyphusJuniorPromptSource", () => {
 
   test("returns 'default' for Claude models", () => {
     // given
-    const model = "anthropic/claude-sonnet-4-6"
+    const model = "anthropic/claude-sonnet-5"
 
     // when
     const source = getSisyphusJuniorPromptSource(model)
@@ -749,7 +752,7 @@ describe("buildSisyphusJuniorPrompt", () => {
 
   test("Claude model prompt contains Claude-specific sections", () => {
     // given
-    const model = "anthropic/claude-sonnet-4-6"
+    const model = "anthropic/claude-sonnet-5"
 
     // when
     const prompt = buildSisyphusJuniorPrompt(model, false)
@@ -807,7 +810,7 @@ describe("buildSisyphusJuniorPrompt", () => {
 
   test("useTaskSystem=false includes Todo_Discipline for Claude", () => {
     // given
-    const model = "anthropic/claude-sonnet-4-6"
+    const model = "anthropic/claude-sonnet-5"
 
     // when
     const prompt = buildSisyphusJuniorPrompt(model, false)

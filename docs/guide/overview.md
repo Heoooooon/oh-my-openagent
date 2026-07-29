@@ -84,10 +84,10 @@ Sisyphus is your main orchestrator. He plans, delegates to specialists, and driv
 
 - **Claude Opus 5** / **Opus 5** — Best overall experience. Sisyphus was built with Claude-optimized prompts.
 - **Kimi K3** — Strongest Kimi for Sisyphus. Recommended when you can accept its thinking-token cost; the K3 prompt is calibrated to stop overthinking and keep work moving.
-- **Kimi K3** / **K3** — Great Claude-like alternatives. K3 is the current default fallback in the primary Sisyphus chain after K3; many users run K3 or the K3/K3 combo exclusively.
-- **GLM 5** — Solid option, especially via Z.ai. **GLM 5.2 is experimental:** Sisyphus uses a GLM-5.2-calibrated prompt for model IDs recognized as GLM, but current evidence is one community report without maintainer end-to-end validation. The automatic chain is configured with `glm-5`, and fuzzy availability matching may resolve that entry to GLM 5.1 or GLM 5.2.
+- **Kimi K2.7** — Restrained, outcome-first Kimi fallback for Claude-like orchestration paths.
+- **GLM 5.2** — Solid option, especially via OpenCode Go. Sisyphus uses a GLM-5.2-calibrated prompt and the automatic chain includes `glm-5.2` explicitly, but current evidence is still lighter than Claude/Kimi maintainer validation.
 
-Sisyphus works best on Claude Opus 5, Kimi K3 (or K3), and GLM 5. GPT-5.4 has its own prompt, while GPT-5.5 and GPT-5.6 Sol share a model-aware GPT-native prompt family. Hephaestus remains the recommended GPT-5.6 agent because [issue #6074](https://github.com/code-yeongyu/oh-my-openagent/issues/6074) tracks Sisyphus over-orchestration on bounded work.
+Sisyphus works best on Claude Opus 5, Kimi K3/K2.7, and GLM 5.2. GPT-5.4 has its own prompt, while GPT-5.5 and GPT-5.6 Sol share a model-aware GPT-native prompt family. Hephaestus remains the recommended GPT-5.6 agent because [issue #6074](https://github.com/code-yeongyu/oh-my-openagent/issues/6074) tracks Sisyphus over-orchestration on bounded work.
 
 ### Hephaestus: The Legitimate Craftsman
 
@@ -178,7 +178,7 @@ You can override specific agents or categories in your config:
     },
 
     // Research agents: cheaper models are fine
-    "librarian": { "model": "google/gemini-3-flash" },
+    "librarian": { "model": "google/gemini-3.6-flash" },
     "explore": { "model": "github-copilot/grok-code-fast-1" },
 
     // Architecture consultation: GPT or Claude Opus
@@ -204,14 +204,14 @@ You can override specific agents or categories in your config:
     // Quick tasks: fast and cheap
     "quick": { "model": "openai/gpt-5.4-mini" },
 
-    // Low-effort fallback: cheapest available
-    "unspecified-low": { "model": "openai/gpt-5.4-mini" },
+    // Low-effort fallback: GPT-5.6 Luna
+    "unspecified-low": { "model": "openai/gpt-5.6-luna", "variant": "xhigh" },
 
-    // High-effort fallback: best available
-    "unspecified-high": { "model": "anthropic/claude-opus-5", "variant": "max" },
+    // High-effort fallback: Kimi K3, then Opus 5
+    "unspecified-high": { "model": "kimi-for-coding/kimi-k3", "variant": "max" },
 
     // Prose and documentation
-    "writing": { "model": "anthropic/claude-opus-5", "variant": "high" },
+    "writing": { "model": "google/gemini-3.6-flash" },
   },
 }
 ```
@@ -222,14 +222,14 @@ You can override specific agents or categories in your config:
 
 - Claude Opus 5, Claude Haiku 4.5
 - Kimi K3 — behaves very similarly to Claude
-- GLM 5 — Claude-like behavior, good for broad tasks
+- GLM 5.2 — Claude-like behavior, good for broad tasks
 
 **GPT models** (explicit reasoning, principle-driven):
 
-- GPT-5.6 Sol — preferred for Hephaestus and `ultrabrain` when OpenAI or Vercel exposes it; first fallback for `deep`
+- GPT-5.6 Sol — preferred for Hephaestus and `ultrabrain` when OpenAI or Vercel exposes it; first GPT-5.6 Sol-family fallback for deep GPT-native roles
 - GPT-5.6 Terra — mid-tier; default for the `deep` category (xhigh); preferred for Momus (high)
 - GPT-5.6 Luna — light tier; default for the `unspecified-low` category (xhigh)
-- GPT-5.6 Sol — deep coding powerhouse, default for Oracle and the first GPT fallback for GPT-5.6-native roles
+- GPT-5.6 Sol override paths — deep coding powerhouse, default for Oracle and the first GPT fallback for GPT-5.6-native roles
 - GPT-5.4 Mini — fast and cheap utility tasks
 
 **Different-behavior models**:
