@@ -3,7 +3,12 @@ import {
 	canReconcileCompletedTaskScopedAggregateSnapshot,
 	codexSnapshotMismatchError,
 } from "./checkpoint-reconciliation.js";
-import { readCodexGoalSnapshotInput, reconcileCodexGoalSnapshot } from "./codex-goal-snapshot.js";
+import {
+	codexGoalSnapshotScopeMismatch,
+	nativeGoalSnapshotRecord,
+	readCodexGoalSnapshotInput,
+	reconcileCodexGoalSnapshot,
+} from "./codex-goal-snapshot.js";
 import {
 	codexGoalMode,
 	compatibleCodexObjectives,
@@ -29,6 +34,30 @@ export async function validateCheckpointCodexGoal(input: {
 	const aggregate = codexGoalMode(input.plan) === "aggregate";
 	const final = isFinalRunCompletionCandidate(input.plan, input.goal);
 	const snapshot = await readCodexGoalSnapshotInput(input.raw, input.repoRoot);
+	const binding = input.plan.nativeGoalBinding;
+	if (binding !== undefined) {
+		if (
+			input.scope?.sessionId !== binding.sessionId ||
+			codexGoalSnapshotScopeMismatch(snapshot?.raw, binding.sessionId) !== undefined
+		) {
+			throw new UlwLoopError(
+				"Native snapshot and binding must match the selected session.",
+				"ULW_LOOP_CODEX_SNAPSHOT_SCOPE_MISMATCH",
+			);
+		}
+		const native = nativeGoalSnapshotRecord(snapshot?.raw);
+		const status = native["status"];
+		if (
+			typeof native["objective"] !== "string" ||
+			typeof status !== "string" ||
+			status.toLowerCase() !== (final ? "complete" : "active")
+		) {
+			throw new UlwLoopError(
+				"Adopted native snapshots require an explicit objective and ACTIVE intermediate / COMPLETE final status.",
+				"ulw_loop_codex_snapshot_mismatch",
+			);
+		}
+	}
 	const expectedObjective = expectedCodexObjective(input.plan, input.goal);
 	const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
 		expectedObjective,
@@ -38,11 +67,15 @@ export async function validateCheckpointCodexGoal(input: {
 		requireComplete: !aggregate || final,
 	});
 	if (reconciliation.ok) return reconciliation.snapshot.raw;
+	// An explicit binding must never be weakened by legacy artifact/brief heuristics.
+	if (binding !== undefined) throw codexSnapshotMismatchError({ reconciliation, snapshot, expectedObjective });
 	const objective = snapshot?.objective;
 	const mismatchedTaskObjective =
 		snapshot?.available === true &&
 		objective !== undefined &&
-		normalizeObjective(objective) !== normalizeObjective(expectedObjective);
+		!(aggregate ? compatibleCodexObjectives(input.plan) : [expectedObjective]).some(
+			(accepted) => normalizeObjective(objective) === normalizeObjective(accepted),
+		);
 	const completedTaskScoped =
 		mismatchedTaskObjective &&
 		snapshot.status === "complete" &&

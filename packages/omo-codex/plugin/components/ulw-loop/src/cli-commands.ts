@@ -1,5 +1,6 @@
 import { checkpoint } from "./checkpoint-continuation.js";
 import { hasFlag, readValue } from "./cli-arg-parser.js";
+import { adoptNativeGoalCommand } from "./cli-native-goal.js";
 import { printJsonError, subcommandHelp, ULW_LOOP_HELP } from "./cli-output.js";
 import {
 	addGoal,
@@ -27,6 +28,7 @@ export const ULW_LOOP_SUBCOMMANDS = [
 	"criteria",
 	"record-evidence",
 	"record-review-blockers",
+	"adopt-native-goal",
 ] as const;
 
 export type UlwLoopSubcommand = (typeof ULW_LOOP_SUBCOMMANDS)[number];
@@ -82,6 +84,8 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 				return await captureEvidence(repoRoot, rest, json, scope);
 			case "record-review-blockers":
 				return await reviewBlockers(repoRoot, rest, json, scope);
+			case "adopt-native-goal":
+				return await adoptNativeGoalCommand(repoRoot, rest, json, scope);
 			default:
 				return unhandledSubcommand(command);
 		}

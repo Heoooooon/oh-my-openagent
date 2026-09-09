@@ -52,6 +52,7 @@ export const ULW_LOOP_LEDGER_EVENT_KINDS = [
 	"goal_retried",
 	"aggregate_completed",
 	"aggregate_objective_migrated",
+	"native_goal_adopted",
 	"goal_added",
 	"steering_accepted",
 	"steering_rejected",

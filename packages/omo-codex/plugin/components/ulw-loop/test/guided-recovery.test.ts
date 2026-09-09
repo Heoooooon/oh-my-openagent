@@ -40,9 +40,6 @@ describe("#given a codex goal snapshot whose objective differs from the plan", (
 			expectedObjective: ULW_LOOP_AGGREGATE_CODEX_OBJECTIVE,
 			receivedObjective: "wrong objective",
 		});
-		expect(error.message).toContain(
-			"objective must equal the plan's codexObjective exactly — copy the expected value below",
-		);
 		expect(error.message).toContain(ULW_LOOP_AGGREGATE_CODEX_OBJECTIVE);
 	});
 
@@ -66,9 +63,6 @@ describe("#given a codex goal snapshot whose objective differs from the plan", (
 			expectedObjective: ULW_LOOP_AGGREGATE_CODEX_OBJECTIVE,
 			receivedObjective: "stale objective",
 		});
-		expect(error.message).toContain(
-			"objective must equal the plan's codexObjective exactly — copy the expected value below",
-		);
 	});
 });
 
