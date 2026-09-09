@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-export type CodexGoalSnapshotStatus = "active" | "complete" | "cancelled" | "failed" | "unknown";
+export type CodexGoalSnapshotStatus = "active" | "blocked" | "complete" | "cancelled" | "failed" | "unknown";
 
 export interface CodexGoalSnapshot {
 	available: boolean;
@@ -31,6 +31,21 @@ function safeObject(value: unknown): Record<string, unknown> {
 	return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
+export function nativeGoalSnapshotRecord(raw: unknown): Record<string, unknown> {
+	const root = safeObject(raw);
+	return Object.hasOwn(root, "goal") ? safeObject(root["goal"]) : root;
+}
+
+export function codexGoalSnapshotScopeMismatch(raw: unknown, sessionId: string): string | undefined {
+	const root = safeObject(raw);
+	for (const record of [root, safeObject(root["goal"])]) {
+		for (const key of ["threadId", "thread_id", "sessionId", "session_id"]) {
+			if (Object.hasOwn(record, key) && record[key] !== sessionId) return key;
+		}
+	}
+	return undefined;
+}
+
 function safeString(value: unknown): string {
 	return typeof value === "string" ? value.trim() : "";
 }
@@ -40,6 +55,7 @@ function normalizeStatus(value: unknown): CodexGoalSnapshotStatus {
 	if (status === "complete" || status === "completed" || status === "done") return "complete";
 	if (status === "cancelled" || status === "canceled") return "cancelled";
 	if (status === "failed" || status === "failure") return "failed";
+	if (status === "blocked") return "blocked";
 	if (status === "active" || status === "in_progress" || status === "pending" || status === "running") return "active";
 	return "unknown";
 }
@@ -56,9 +72,9 @@ export function parseCodexGoalSnapshot(value: unknown): CodexGoalSnapshot {
 	}
 
 	const goal = safeObject(goalValue);
-	const objective = safeString(
-		goal["objective"] ?? goal["goal"] ?? goal["description"] ?? goal["title"] ?? root["objective"] ?? root["title"],
-	);
+	const objectiveValue =
+		goal["objective"] ?? goal["goal"] ?? goal["description"] ?? goal["title"] ?? root["objective"] ?? root["title"];
+	const objective = typeof objectiveValue === "string" && objectiveValue.trim() ? objectiveValue : "";
 	const status = normalizeStatus(goal["status"] ?? root["status"]);
 
 	return {
@@ -148,7 +164,7 @@ export interface CodexGoalMismatchRecovery {
 /**
  * The reconciliation errors normalize whitespace for comparison, which makes the
  * quoted objective unusable as a copy source. Recovery therefore carries the
- * plan's `codexObjective` verbatim so the agent can paste it into `update_goal`.
+ * plan's `codexObjective` verbatim for explicit binding confirmation.
  */
 export function codexGoalMismatchRecovery(
 	expectedObjective: string,
@@ -156,7 +172,8 @@ export function codexGoalMismatchRecovery(
 ): CodexGoalMismatchRecovery {
 	const receivedObjective = snapshot?.objective ?? "";
 	const message = [
-		"Recovery: the Codex goal objective must equal the plan's codexObjective exactly — copy the expected value below into update_goal and re-run get_goal.",
+		"Recovery: do not rewrite or recreate the native goal. For an explicitly authorized aggregate binding repair, use omo-agent-toolkit ulw-loop adopt-native-goal --session-id <id> --goal-id <id> --expected-objective '<original plan codexObjective>' --codex-goal-json <fresh-get_goal-json-or-path> --evidence '<authorization and scope proof>' --rationale '<why this unchanged native objective covers the original plan>'.",
+		"Adoption requires an ACTIVE or BLOCKED native goal and preserves all completion gates. For BLOCKED, only the user can /goal resume; obtain fresh get_goal JSON afterward. Other modes/statuses require resolving the actual mismatch, not a binding waiver.",
 		`expected codexObjective: ${expectedObjective}`,
 		`received objective: ${receivedObjective || "(none)"}`,
 	].join("\n");

@@ -79,7 +79,11 @@ export async function withUlwLoopMutationLock<T>(
 	return run;
 }
 
-export async function readUlwLoopPlan(repoRoot: string, scope?: UlwLoopScope): Promise<UlwLoopPlan> {
+export async function readUlwLoopPlan(
+	repoRoot: string,
+	scope?: UlwLoopScope,
+	options: { readonly migrateLegacyObjective?: boolean } = {},
+): Promise<UlwLoopPlan> {
 	const path = ulwLoopGoalsPath(repoRoot, scope);
 	let raw: string;
 	try {
@@ -102,7 +106,10 @@ export async function readUlwLoopPlan(repoRoot: string, scope?: UlwLoopScope): P
 		(parsed.codexGoalMode ?? "per_story") === "aggregate" &&
 		isLegacyEnumeratedAggregateObjective(previousObjective)
 	) {
-		if (!(heldLocks.getStore()?.has(`${repoRoot}\0${ulwLoopRelativeDir(scope)}`) ?? false)) {
+		if (
+			options.migrateLegacyObjective === false ||
+			!(heldLocks.getStore()?.has(`${repoRoot}\0${ulwLoopRelativeDir(scope)}`) ?? false)
+		) {
 			// A read path (status/criteria) must not mutate state: mutating here runs
 			// unlocked and a second reader could write a partially-migrated plan.
 			throw new UlwLoopError(

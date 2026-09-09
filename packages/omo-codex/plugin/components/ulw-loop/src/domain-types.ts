@@ -72,6 +72,7 @@ export interface UlwLoopPlan {
 	codexGoalMode?: UlwLoopCodexGoalMode;
 	codexObjective?: string;
 	codexObjectiveAliases?: string[];
+	nativeGoalBinding?: { readonly sessionId: string };
 	aggregateCompletion?: UlwLoopAggregateCompletion;
 	activeGoalId?: string;
 	validationBatches?: readonly UlwLoopValidationBatch[];

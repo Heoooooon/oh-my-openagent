@@ -20,8 +20,30 @@ Every subcommand below is implemented. Pass `--json` where supported for machine
 | `omo-agent-toolkit ulw-loop criteria` | Inspect one goal's success criteria. |
 | `omo-agent-toolkit ulw-loop record-evidence` | Record observable evidence for one criterion. |
 | `omo-agent-toolkit ulw-loop record-review-blockers` | Mark a goal as review-blocked and add follow-up work from final-review findings. |
+| `omo-agent-toolkit ulw-loop adopt-native-goal` | Explicitly audit and bind an unchanged native objective to an unfinished aggregate plan; never start, resume or complete goals. |
 
-The final quality gate parsed by `checkpoint` requires `manualQa`, `gateReview`, `iteration`, and `criteriaCoverage`; lazycodex accepts optional `codeReview`. Lazycodex defaults to `main-session` self-review, with `category:*` and reviewer acceptors available when needed. `criteriaCoverage` records the original intent, desired outcome, user-facing outcome review, pass counts, and covered adversarial classes. The companion `codex-goal-json` must contain `goal.objective` equal to the plan's `codexObjective` verbatim.
+The final quality gate parsed by `checkpoint` requires `manualQa`, `gateReview`, `iteration`, and `criteriaCoverage`; lazycodex accepts optional `codeReview`. Lazycodex defaults to `main-session` self-review, with `category:*` and reviewer acceptors available when needed. `criteriaCoverage` records the original intent, desired outcome, user-facing outcome review, pass counts, and covered adversarial classes. The companion `codex-goal-json` must contain the plan's `codexObjective` or an explicitly compatible aggregate objective (whitespace-normalized comparison).
+
+### Repair an unchanged native-goal binding
+
+Do not replace the native objective with the loop's generated pointer, reset the loop, or fabricate a matching snapshot. If the user authorizes binding the existing native objective to the original aggregate plan, inspect `status --json`, capture a fresh, unmodified `get_goal` response, and run:
+
+```sh
+omo-agent-toolkit ulw-loop adopt-native-goal \
+  --session-id <existing-session-id> --goal-id <current-blocked-or-in-progress-goal-id> \
+  --expected-objective '<exact original plan codexObjective from status>' \
+  --codex-goal-json <fresh-native-snapshot.json> \
+  --evidence '<user authorization and evidence linking the native goal to this plan>' \
+  --rationale '<why the unchanged objective covers every original phase and constraint>' --json
+```
+
+This explicit operation requires nonempty evidence/rationale and exact confirmation of the original objective. It checks the session's artifact paths and every provided `threadId`/`thread_id`/`sessionId`/`session_id` at the snapshot root and goal. Without native scope metadata, the selected CLI session and supplied evidence are the caller's attestation; this offline CLI cannot independently authenticate a snapshot or prove its freshness. Pass the real snapshot, not a rewritten objective/status. Existing session environment variables can supply scope instead of `--session-id`.
+
+Only an unfinished aggregate plan with a current blocked/in-progress loop goal and an explicit ACTIVE or BLOCKED native goal objective is supported. Per-story mode, completed plans, other statuses, stale expected objectives, malformed/empty/no-goal snapshots, incompatible sessions and extra mutation flags are rejected. Legacy objectives requiring automatic migration are rejected without rewriting them.
+
+The mutation lock covers validation, audit and binding persistence. `native_goal_adopted` appends the raw snapshot, session, target, original objective, compatible objectives, binding metadata, evidence and rationale to the existing ledger before adding compatibility; audit failure cannot grant a binding. The plan records `nativeGoalBinding: {sessionId}` to distinguish explicit adoption from legacy compatibility aliases. First adoption records this binding even if the objective was already compatible, without duplicating aliases. As with other plan/ledger operations, these are separate filesystem writes, not a two-file transaction: if the plan write fails, inspect the audit and retry the explicit command. Repeating an already-compatible, explicitly adopted binding returns `adopted: false` without changing plan bytes, timestamps or the ledger.
+
+The original `codexObjective`, brief, goals, statuses, attempts, criteria and captured evidence remain unchanged. Adoption does **not** resume the native goal or checkpoint the loop. A BLOCKED snapshot still fails an active intermediate checkpoint: the user must issue `/goal resume`, then supply a genuine fresh ACTIVE `get_goal` snapshot. Every adopted completion checkpoint requires an explicit compatible objective (whitespace-normalized exact equality), the bound session, and matching root/goal scope metadata whenever provided. Intermediate snapshots must explicitly be ACTIVE; final snapshots must explicitly be COMPLETE, with all later criteria/batch and quality gates still required. Unrelated objectives cannot use legacy artifact/brief heuristics to bypass this binding, even if they mention `ledger.jsonl`. Unadopted plans retain their legacy reconciliation behavior; there is no per-checkpoint adoption flag.
 
 A complete passing checkpoint uses both payloads:
 
