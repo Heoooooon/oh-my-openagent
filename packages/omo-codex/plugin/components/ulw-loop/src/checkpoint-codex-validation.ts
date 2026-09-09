@@ -73,9 +73,7 @@ export async function validateCheckpointCodexGoal(input: {
 	const mismatchedTaskObjective =
 		snapshot?.available === true &&
 		objective !== undefined &&
-		!(aggregate ? compatibleCodexObjectives(input.plan) : [expectedObjective]).some(
-			(accepted) => normalizeObjective(objective) === normalizeObjective(accepted),
-		);
+		normalizeObjective(objective) !== normalizeObjective(expectedObjective);
 	const completedTaskScoped =
 		mismatchedTaskObjective &&
 		snapshot.status === "complete" &&

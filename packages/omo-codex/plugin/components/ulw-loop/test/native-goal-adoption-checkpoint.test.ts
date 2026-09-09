@@ -65,6 +65,61 @@ async function rejectsUnchanged(action: () => Promise<unknown>, code: string) {
 	expect(await Promise.all(paths.map((path) => readFile(path, "utf8")))).toEqual(before);
 }
 
+describe.each([
+	{ phase: "intermediate", goalId: "G002", status: "COMPLETE", final: false },
+	{ phase: "final", goalId: "G005", status: "ACTIVE", final: true },
+])("#given a $phase legacy task-scoped snapshot", ({ goalId, status, final }) => {
+	it.each([
+		{ binding: "unadopted without alias", alias: false, adopted: false },
+		{ binding: "unadopted with alias", alias: true, adopted: false },
+		{ binding: "explicitly adopted with alias", alias: true, adopted: true },
+	])("#when $binding #then only unadopted plans retain legacy reconciliation", async ({ alias, adopted }) => {
+		const objective =
+			"Complete all ulw-loop stories listed in .omo/ulw-loop/goals.json. Use .omo/ulw-loop/ledger.jsonl as the durable audit trail.";
+		const seed = adoptionPlan();
+		seed.codexObjectiveAliases = alias ? [objective] : [];
+		seed.activeGoalId = goalId;
+		for (const goal of seed.goals) {
+			if (goal.id === goalId) goal.status = "in_progress";
+			else if (final) goal.status = "complete";
+			if (final) {
+				for (const criterion of goal.successCriteria) {
+					criterion.status = "pass";
+					criterion.capturedEvidence = "isolated final proof";
+				}
+			}
+		}
+		await writePlan(repo, seed, ADOPTION_SCOPE);
+		if (adopted) await adopt(goalId, objective);
+		const gate = final ? await qualityGateJson(repo) : undefined;
+		const action = () =>
+			checkpointUlwLoop(
+				repo,
+				{
+					goalId,
+					status: "complete",
+					evidence: `${goalId} implementation complete and validation passed; ledger.jsonl`,
+					codexGoalJson: JSON.stringify(nativeSnapshot(status, objective)),
+					...(gate === undefined ? {} : { qualityGateJson: gate }),
+				},
+				ADOPTION_SCOPE,
+			);
+		if (adopted) {
+			await rejectsUnchanged(action, "ulw_loop_codex_snapshot_mismatch");
+			return;
+		}
+		const result = await action();
+		expect(result.goal.status).toBe("complete");
+		expect(result.plan.aggregateCompletion?.status).toBe(final ? "complete" : undefined);
+		expect(result.ledgerEntry.kind).toBe(final ? "aggregate_completed" : "goal_completed");
+		expect(result.ledgerEntry.codexGoal).toEqual(nativeSnapshot(status, objective));
+		expect(result.plan.codexObjectiveAliases).toEqual(seed.codexObjectiveAliases);
+		expect(result.plan.nativeGoalBinding).toBeUndefined();
+		expect(await readUlwLoopPlan(repo, ADOPTION_SCOPE)).toEqual(result.plan);
+		if (!final) expect(result.plan.goals.slice(2)).toEqual(seed.goals.slice(2));
+	});
+});
+
 describe("#given explicit native-goal binding", () => {
 	it("#when parsing BLOCKED #then it is never normalized to active", () => {
 		expect(parseCodexGoalSnapshot(nativeSnapshot())).toMatchObject({
